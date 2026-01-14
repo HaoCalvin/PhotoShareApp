@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>光影相册 - 照片分享社区</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>照片分享</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="manifest" href="manifest.json">
@@ -18,14 +18,16 @@
                 <span>光影相册</span>
             </div>
             
+            <!-- 桌面端搜索 -->
             <div class="nav-search">
-                <input type="text" id="searchInput" placeholder="搜索关键词或用户名...">
+                <input type="text" id="searchInput" placeholder="搜索关键词、用户名或描述...">
                 <button onclick="searchContent()"><i class="fas fa-search"></i></button>
             </div>
             
             <div class="nav-menu">
                 <a href="#" onclick="showHome()"><i class="fas fa-home"></i> <span class="nav-text">首页</span></a>
                 <a href="#" onclick="showUpload()"><i class="fas fa-cloud-upload-alt"></i> <span class="nav-text">上传</span></a>
+                <a href="#" onclick="showMessages()"><i class="fas fa-envelope"></i> <span class="nav-text">私信</span></a>
                 <a href="#" onclick="showProfile()"><i class="fas fa-user"></i> <span class="nav-text">我的</span></a>
                 <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">
                     <i class="fas fa-moon"></i>
@@ -35,6 +37,7 @@
                 </button>
             </div>
             
+            <!-- 移动端搜索按钮 -->
             <button class="nav-toggle" onclick="toggleMobileMenu()">
                 <i class="fas fa-bars"></i>
             </button>
@@ -50,8 +53,7 @@
                 <input type="email" id="authEmail" placeholder="邮箱地址" required>
                 <input type="password" id="authPassword" placeholder="密码（至少6位）" required minlength="6">
                 <div id="registerFields" style="display:none;">
-                    <input type="text" id="authUsername" placeholder="用户名" required>
-                    <input type="text" id="authBio" placeholder="个人简介（可选）">
+                    <!-- 这里的内容将由 JavaScript 动态生成 -->
                 </div>
                 <button type="submit" id="authSubmit">登录</button>
                 <p id="authToggle">还没有账号？<a href="#" onclick="toggleAuthMode()">立即注册</a></p>
@@ -128,6 +130,11 @@
             </div>
         </section>
 
+        <!-- 私信页面 -->
+        <section id="messagesSection" class="hidden">
+            <div id="messagesContent"></div>
+        </section>
+
         <!-- 个人资料页面 -->
         <section id="profileSection" class="hidden">
             <div id="profileContent"></div>
@@ -138,9 +145,34 @@
             <div id="userContent"></div>
         </section>
 
-        <!-- 搜索结果 -->
+        <!-- 搜索结果页面 -->
         <section id="searchSection" class="hidden">
             <div id="searchResults"></div>
+        </section>
+
+        <!-- 设置页面 -->
+        <section id="settingsSection" class="hidden">
+            <div id="settingsContent"></div>
+        </section>
+
+        <!-- 管理员页面 -->
+        <section id="adminSection" class="hidden">
+            <div id="adminContent"></div>
+        </section>
+
+        <!-- 关于页面 -->
+        <section id="aboutSection" class="hidden">
+            <div id="aboutContent" class="page-content"></div>
+        </section>
+
+        <!-- 隐私政策页面 -->
+        <section id="privacySection" class="hidden">
+            <div id="privacyContent" class="page-content"></div>
+        </section>
+
+        <!-- 使用条款页面 -->
+        <section id="termsSection" class="hidden">
+            <div id="termsContent" class="page-content"></div>
         </section>
     </main>
 
