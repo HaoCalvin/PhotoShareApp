@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>光影相册 - 照片分享社区</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📸</text></svg>">
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <i class="fas fa-camera"></i>
+                <span>光影相册</span>
+            </div>
+            
+            <div class="nav-search">
+                <input type="text" id="searchInput" placeholder="搜索关键词或用户名...">
+                <button onclick="searchContent()"><i class="fas fa-search"></i></button>
+            </div>
+            
+            <div class="nav-menu">
+                <a href="#" onclick="showHome()"><i class="fas fa-home"></i> <span class="nav-text">首页</span></a>
+                <a href="#" onclick="showUpload()"><i class="fas fa-cloud-upload-alt"></i> <span class="nav-text">上传</span></a>
+                <a href="#" onclick="showProfile()"><i class="fas fa-user"></i> <span class="nav-text">我的</span></a>
+                <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="btn-login" onclick="toggleAuthModal()" id="loginBtn">
+                    <i class="fas fa-sign-in-alt"></i> <span class="nav-text">登录</span>
+                </button>
+            </div>
+            
+            <button class="nav-toggle" onclick="toggleMobileMenu()">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- 登录/注册模态框 -->
+    <div id="authModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="toggleAuthModal()">&times;</span>
+            <h2 id="authTitle">登录</h2>
+            <form id="authForm" onsubmit="handleAuth(event)">
+                <input type="email" id="authEmail" placeholder="邮箱地址" required>
+                <input type="password" id="authPassword" placeholder="密码（至少6位）" required minlength="6">
+                <div id="registerFields" style="display:none;">
+                    <input type="text" id="authUsername" placeholder="用户名" required>
+                    <input type="text" id="authBio" placeholder="个人简介（可选）">
+                </div>
+                <button type="submit" id="authSubmit">登录</button>
+                <p id="authToggle">还没有账号？<a href="#" onclick="toggleAuthMode()">立即注册</a></p>
+                <p id="authError" class="error-message"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- 图片上传模态框 -->
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="toggleUploadModal()">&times;</span>
+            <h2><i class="fas fa-cloud-upload-alt"></i> 上传照片</h2>
+            <form id="uploadForm" onsubmit="uploadPhoto(event)">
+                <div class="upload-area" onclick="document.getElementById('photoInput').click()" id="uploadDropZone">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>点击或拖拽上传照片</p>
+                    <p class="subtext">支持 JPG, PNG, GIF, WebP (最大5MB)</p>
+                </div>
+                <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="previewImage(event)">
+                <div id="imagePreview" class="image-preview"></div>
+                
+                <div id="uploadProgressContainer" class="upload-progress" style="display:none;">
+                    <div class="progress-text" id="uploadProgressText"></div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="uploadProgressFill"></div>
+                    </div>
+                </div>
+                
+                <input type="text" id="photoTitle" placeholder="照片标题" required>
+                <textarea id="photoDescription" placeholder="照片描述（可选）" rows="3"></textarea>
+                <div class="keywords-container">
+                    <div id="keywordsList" class="keywords-list"></div>
+                    <input type="text" id="keywordInput" placeholder="添加关键词（回车添加）" onkeypress="addKeyword(event)">
+                </div>
+                <div class="privacy-setting">
+                    <label>
+                        <input type="checkbox" id="isPrivate">
+                        <i class="fas fa-lock"></i> 设为私密（仅自己可见）
+                    </label>
+                </div>
+                <button type="submit" id="uploadButton" class="upload-btn">
+                    <i class="fas fa-upload"></i> 上传照片
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 图片详情模态框 -->
+    <div id="imageModal" class="modal">
+        <div class="modal-content image-modal">
+            <span class="close" onclick="closeImageModal()">&times;</span>
+            <div id="imageDetail" class="image-detail-container"></div>
+        </div>
+    </div>
+
+    <!-- 主内容区 -->
+    <main class="container">
+        <!-- 热门图片区 -->
+        <section id="homeSection">
+            <div class="section-header">
+                <h2><i class="fas fa-fire"></i> 热门照片</h2>
+                <div class="sort-options">
+                    <select id="sortBy" onchange="loadPhotos()">
+                        <option value="likes">按点赞数</option>
+                        <option value="recent" selected>按时间</option>
+                        <option value="views">按浏览数</option>
+                    </select>
+                </div>
+            </div>
+            <div id="photosGrid" class="photos-grid"></div>
+            <div id="loadingMore" class="loading-more" style="display:none;">
+                <i class="fas fa-spinner fa-spin"></i> 加载更多...
+            </div>
+        </section>
+
+        <!-- 个人资料页面 -->
+        <section id="profileSection" class="hidden">
+            <div id="profileContent"></div>
+        </section>
+
+        <!-- 用户页面 -->
+        <section id="userSection" class="hidden">
+            <div id="userContent"></div>
+        </section>
+
+        <!-- 搜索结果 -->
+        <section id="searchSection" class="hidden">
+            <div id="searchResults"></div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p><i class="fas fa-camera"></i> © 2024 光影相册 - 分享每一刻精彩</p>
+            <p id="statsInfo">加载统计信息...</p>
+            <div class="footer-links">
+                <a href="#" onclick="showAbout()"><i class="fas fa-info-circle"></i> 关于</a>
+                <a href="#" onclick="showTerms()"><i class="fas fa-file-contract"></i> 条款</a>
+                <a href="#" onclick="showPrivacy()"><i class="fas fa-shield-alt"></i> 隐私</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    
+    <!-- App Scripts -->
+    <script src="app.js"></script>
+    
+    <!-- PWA Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('Service Worker 注册成功:', reg))
+                .catch(err => console.log('Service Worker 注册失败:', err));
+        }
+    </script>
+</body>
+</html>
