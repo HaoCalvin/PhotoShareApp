@@ -1608,4 +1608,87 @@ window.showAllSearchPhotos = showAllSearchPhotos;
 window.updateSearchUIForMobile = updateSearchUIForMobile;
 
 console.log('🚀 应用初始化完成！');
+    
+    try {
+        // 尝试初始化Firebase
+        firebase.initializeApp(firebaseConfig);
+        console.log('✅ Firebase 初始化成功');
+        
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        
+        window.auth = auth;
+        window.db = db;
+        
+        // ... 其他初始化代码
+        
+    } catch (error) {
+        console.error('❌ Firebase 初始化失败:', error);
+        
+        // 显示用户友好的消息
+        showNotification('无法连接到数据库服务，部分功能受限', 'warning');
+        
+        // 设置回退方案
+        setupFallbackMode();
+    }
+});
+
+// 回退模式函数
+function setupFallbackMode() {
+    console.log('进入离线/演示模式');
+    
+    // 修改登录按钮行为
+    const loginBtn = document.getElementById('loginBtn');
+    if (loginBtn) {
+        loginBtn.onclick = function() {
+            showDemoLoginModal();
+        };
+    }
+    
+    // 修改其他需要Firebase的功能
+    // ...
+}
+
+// 演示登录模态框
+function showDemoLoginModal() {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.5); display: flex; align-items: center;
+        justify-content: center; z-index: 2000;
+    `;
+    
+    modal.innerHTML = `
+        <div style="background: white; padding: 2rem; border-radius: 8px; max-width: 400px; width: 90%;">
+            <h2>演示模式</h2>
+            <p>Firebase服务未连接，您正在使用演示模式。</p>
+            <p>本地功能可用：</p>
+            <ul style="margin: 1rem 0; padding-left: 1.5rem;">
+                <li>浏览界面布局</li>
+                <li>搜索功能（演示数据）</li>
+                <li>主题切换</li>
+                <li>响应式设计</li>
+            </ul>
+            <p>需要连接Firebase才能使用：</p>
+            <ul style="margin: 1rem 0; padding-left: 1.5rem;">
+                <li>用户登录/注册</li>
+                <li>照片上传</li>
+                <li>实时数据</li>
+                <li>消息功能</li>
+            </ul>
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                <button onclick="this.parentElement.parentElement.remove()" 
+                        style="padding: 0.75rem 1.5rem; background: #6c757d; color: white; border: none; border-radius: 4px; flex: 1;">
+                    关闭
+                </button>
+                <button onclick="showDemoFeatures()" 
+                        style="padding: 0.75rem 1.5rem; background: #4361ee; color: white; border: none; border-radius: 4px; flex: 1;">
+                    查看演示功能
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
 [file content end]
