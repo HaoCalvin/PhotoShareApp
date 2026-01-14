@@ -1,10 +1,12 @@
+[file name]: style.css
+[file content begin]
 /* ============================================
    移动端搜索样式
    ============================================ */
 
-/* 移动端搜索按钮 */
+/* 移动端搜索按钮 - 默认隐藏（桌面端） */
 .mobile-search-btn {
-    display: none;
+    display: none !important;
     background: none;
     border: none;
     color: var(--text-color);
@@ -432,10 +434,10 @@
     color: var(--danger-color);
 }
 
-/* 响应式设计 - 移动端搜索按钮 */
+/* 响应式设计 - 移动端显示搜索按钮 */
 @media (max-width: 768px) {
     .mobile-search-btn {
-        display: flex;
+        display: flex !important;
     }
     
     .nav-search {
@@ -949,3 +951,4 @@
     background: #1e293b;
     border-color: #334155;
 }
+[file content end]

@@ -1,3 +1,5 @@
+[file name]: app.js
+[file content begin]
 // ============================================
 // 配置和初始化
 // ============================================
@@ -72,6 +74,12 @@ document.addEventListener('DOMContentLoaded', function() {
     initMobileOptimizations();
     validateCloudinaryConfig();
     
+    // ✅ 初始化移动端搜索
+    initMobileSearch();
+    
+    // ✅ 初始化搜索建议
+    initSearchSuggestions();
+    
     // 监听认证状态
     auth.onAuthStateChanged(async (user) => {
         currentUser = user;
@@ -118,8 +126,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // 初始化移动端搜索
-    initMobileSearch();
+    // ✅ 监听窗口大小变化，更新搜索UI
+    window.addEventListener('resize', updateSearchUIForMobile);
+    
+    // ✅ 初始更新搜索UI
+    setTimeout(updateSearchUIForMobile, 100);
+    
+    console.log('✅ 应用初始化完成');
 });
 
 // ============================================
@@ -130,11 +143,18 @@ function initMobileSearch() {
     const navContainer = document.querySelector('.nav-container');
     if (!navContainer) return;
     
+    // 检查是否已存在移动端搜索按钮
+    if (document.querySelector('.mobile-search-btn')) {
+        console.log('📱 移动端搜索按钮已存在');
+        return;
+    }
+    
     // 创建移动端搜索按钮
     const mobileSearchBtn = document.createElement('button');
     mobileSearchBtn.className = 'mobile-search-btn';
     mobileSearchBtn.innerHTML = '<i class="fas fa-search"></i>';
     mobileSearchBtn.title = '搜索';
+    mobileSearchBtn.setAttribute('aria-label', '打开搜索');
     mobileSearchBtn.onclick = toggleMobileSearch;
     
     // 插入到导航栏切换按钮之前
@@ -142,39 +162,97 @@ function initMobileSearch() {
     if (navToggle) {
         navContainer.insertBefore(mobileSearchBtn, navToggle);
     } else {
-        navContainer.appendChild(mobileSearchBtn);
+        // 如果没有切换按钮，添加到导航菜单末尾
+        const navMenu = document.querySelector('.nav-menu');
+        if (navMenu) {
+            navContainer.insertBefore(mobileSearchBtn, navMenu);
+        } else {
+            navContainer.appendChild(mobileSearchBtn);
+        }
     }
     
-    // 创建移动端搜索模态框
-    const mobileSearchModal = document.createElement('div');
-    mobileSearchModal.className = 'mobile-search-modal';
-    mobileSearchModal.innerHTML = `
-        <div class="mobile-search-header">
-            <button class="mobile-search-back" onclick="toggleMobileSearch()">
-                <i class="fas fa-arrow-left"></i>
-            </button>
-            <div class="mobile-search-input-container">
-                <input type="text" 
-                       id="mobileSearchInput" 
-                       placeholder="搜索关键词、用户名或描述..."
-                       autocomplete="off">
-                <button class="mobile-search-clear" onclick="clearMobileSearch()">
-                    <i class="fas fa-times"></i>
+    console.log('✅ 移动端搜索按钮已创建');
+    
+    // 创建移动端搜索模态框（如果不存在）
+    if (!document.querySelector('.mobile-search-modal')) {
+        const mobileSearchModal = document.createElement('div');
+        mobileSearchModal.className = 'mobile-search-modal';
+        mobileSearchModal.innerHTML = `
+            <div class="mobile-search-header">
+                <button class="mobile-search-back" onclick="toggleMobileSearch()" aria-label="返回">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div class="mobile-search-input-container">
+                    <input type="text" 
+                           id="mobileSearchInput" 
+                           placeholder="搜索关键词、用户名或描述..."
+                           autocomplete="off"
+                           aria-label="搜索输入">
+                    <button class="mobile-search-clear" onclick="clearMobileSearch()" aria-label="清除搜索">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <button class="mobile-search-submit" onclick="performMobileSearch()" aria-label="搜索">
+                    <i class="fas fa-search"></i>
                 </button>
             </div>
-            <button class="mobile-search-submit" onclick="performMobileSearch()">
-                <i class="fas fa-search"></i>
-            </button>
-        </div>
-        <div class="mobile-search-suggestions" id="mobileSearchSuggestions"></div>
-        <div class="mobile-search-history" id="mobileSearchHistory"></div>
-        <div class="mobile-search-trending" id="mobileSearchTrending"></div>
-    `;
-    
-    document.body.appendChild(mobileSearchModal);
+            <div class="mobile-search-suggestions" id="mobileSearchSuggestions"></div>
+            <div class="mobile-search-history" id="mobileSearchHistory"></div>
+            <div class="mobile-search-trending" id="mobileSearchTrending"></div>
+        `;
+        
+        document.body.appendChild(mobileSearchModal);
+        
+        // 为移动端搜索输入框添加事件
+        const mobileInput = document.getElementById('mobileSearchInput');
+        if (mobileInput) {
+            mobileInput.addEventListener('input', function(e) {
+                showMobileSearchSuggestions(e.target.value.trim());
+            });
+            mobileInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    performMobileSearch();
+                }
+            });
+        }
+        
+        console.log('✅ 移动端搜索模态框已创建');
+    }
     
     // 初始化移动端搜索建议
-    initSearchSuggestions();
+    initMobileSearchSuggestions();
+}
+
+// 更新搜索UI以适应移动端
+function updateSearchUIForMobile() {
+    const isMobile = window.innerWidth <= 768;
+    const desktopSearch = document.querySelector('.nav-search');
+    const mobileSearchBtn = document.querySelector('.mobile-search-btn');
+    const navToggle = document.querySelector('.nav-toggle');
+    
+    if (isMobile) {
+        // 移动端：隐藏桌面搜索框，显示移动按钮
+        if (desktopSearch) {
+            desktopSearch.style.display = 'none';
+        }
+        if (mobileSearchBtn) {
+            mobileSearchBtn.style.display = 'flex';
+        }
+        if (navToggle) {
+            navToggle.style.display = 'flex';
+        }
+    } else {
+        // 桌面端：显示桌面搜索框，隐藏移动按钮
+        if (desktopSearch) {
+            desktopSearch.style.display = 'flex';
+        }
+        if (mobileSearchBtn) {
+            mobileSearchBtn.style.display = 'none';
+        }
+        if (navToggle) {
+            navToggle.style.display = 'none';
+        }
+    }
 }
 
 function toggleMobileSearch() {
@@ -189,8 +267,10 @@ function toggleMobileSearch() {
         document.body.classList.add('mobile-search-open');
         if (searchInput) {
             searchInput.focus();
+            searchInput.value = '';
             loadSearchHistory();
             loadTrendingSearches();
+            document.getElementById('mobileSearchSuggestions').innerHTML = '';
         }
     }
 }
@@ -226,6 +306,134 @@ function performMobileSearch() {
     
     // 关闭移动端搜索
     toggleMobileSearch();
+}
+
+// ============================================
+// 移动端搜索建议功能
+// ============================================
+
+function initMobileSearchSuggestions() {
+    // 移动端搜索建议初始化
+    const mobileInput = document.getElementById('mobileSearchInput');
+    if (mobileInput) {
+        mobileInput.addEventListener('input', function(e) {
+            const query = e.target.value.trim();
+            if (query.length > 0) {
+                showMobileSearchSuggestions(query);
+            } else {
+                document.getElementById('mobileSearchSuggestions').innerHTML = '';
+            }
+        });
+    }
+}
+
+async function showMobileSearchSuggestions(query) {
+    const suggestionsContainer = document.getElementById('mobileSearchSuggestions');
+    if (!suggestionsContainer) return;
+    
+    if (!query || query.length < 1) {
+        suggestionsContainer.innerHTML = '';
+        return;
+    }
+    
+    try {
+        const suggestions = await getSearchSuggestions(query);
+        
+        let html = '';
+        
+        if (suggestions.keywords.length > 0) {
+            html += `
+                <div class="mobile-search-section">
+                    <h4><i class="fas fa-hashtag"></i> 相关关键词</h4>
+                    <div class="suggestions-list">
+            `;
+            
+            suggestions.keywords.slice(0, 5).forEach(keyword => {
+                html += `
+                    <button class="suggestion-btn" onclick="selectMobileSuggestion('${escapeHtml(keyword)}')">
+                        ${escapeHtml(keyword)}
+                    </button>
+                `;
+            });
+            
+            html += `
+                    </div>
+                </div>
+            `;
+        }
+        
+        if (suggestions.users.length > 0) {
+            html += `
+                <div class="mobile-search-section">
+                    <h4><i class="fas fa-users"></i> 相关用户</h4>
+                    <div class="users-suggestions">
+            `;
+            
+            suggestions.users.slice(0, 3).forEach(user => {
+                html += `
+                    <button class="user-suggestion" onclick="selectMobileUser('${escapeHtml(user.username)}')">
+                        <img src="${user.avatar || generateAvatarUrl(user.username)}" 
+                             alt="${escapeHtml(user.username)}">
+                        <span>${escapeHtml(user.username)}</span>
+                    </button>
+                `;
+            });
+            
+            html += `
+                    </div>
+                </div>
+            `;
+        }
+        
+        if (suggestions.photos.length > 0) {
+            html += `
+                <div class="mobile-search-section">
+                    <h4><i class="fas fa-images"></i> 相关照片标题</h4>
+                    <div class="suggestions-list">
+            `;
+            
+            suggestions.photos.slice(0, 3).forEach(title => {
+                html += `
+                    <button class="suggestion-btn" onclick="selectMobileSuggestion('${escapeHtml(title)}')">
+                        ${escapeHtml(title.substring(0, 20))}${title.length > 20 ? '...' : ''}
+                    </button>
+                `;
+            });
+            
+            html += `
+                    </div>
+                </div>
+            `;
+        }
+        
+        suggestionsContainer.innerHTML = html;
+        
+    } catch (error) {
+        console.error('显示移动端搜索建议失败:', error);
+    }
+}
+
+// 选择移动端建议
+function selectMobileSuggestion(text) {
+    const searchInput = document.getElementById('mobileSearchInput');
+    if (searchInput) {
+        searchInput.value = text;
+        searchInput.focus();
+    }
+}
+
+// 选择移动端用户
+function selectMobileUser(username) {
+    const searchInput = document.getElementById('mobileSearchInput');
+    if (searchInput) {
+        searchInput.value = username;
+        searchInput.focus();
+    }
+    
+    // 直接搜索用户
+    setTimeout(() => {
+        performMobileSearch();
+    }, 100);
 }
 
 // ============================================
@@ -1267,98 +1475,6 @@ function selectMobileHistory(query) {
         searchInput.value = query;
         searchInput.focus();
     }
-    
-    // 显示搜索建议
-    showMobileSearchSuggestions(query);
-}
-
-// 显示移动端搜索建议
-async function showMobileSearchSuggestions(query) {
-    const suggestionsContainer = document.getElementById('mobileSearchSuggestions');
-    if (!suggestionsContainer) return;
-    
-    if (!query) {
-        suggestionsContainer.innerHTML = '';
-        return;
-    }
-    
-    try {
-        const suggestions = await getSearchSuggestions(query);
-        
-        let html = '';
-        
-        if (suggestions.keywords.length > 0) {
-            html += `
-                <div class="mobile-search-section">
-                    <h4><i class="fas fa-hashtag"></i> 相关关键词</h4>
-                    <div class="suggestions-list">
-            `;
-            
-            suggestions.keywords.forEach(keyword => {
-                html += `
-                    <button class="suggestion-btn" onclick="selectMobileSuggestion('${escapeHtml(keyword)}')">
-                        ${escapeHtml(keyword)}
-                    </button>
-                `;
-            });
-            
-            html += `
-                    </div>
-                </div>
-            `;
-        }
-        
-        if (suggestions.users.length > 0) {
-            html += `
-                <div class="mobile-search-section">
-                    <h4><i class="fas fa-users"></i> 相关用户</h4>
-                    <div class="users-suggestions">
-            `;
-            
-            suggestions.users.forEach(user => {
-                html += `
-                    <button class="user-suggestion" onclick="selectMobileUser('${escapeHtml(user.username)}')">
-                        <img src="${user.avatar || generateAvatarUrl(user.username)}" 
-                             alt="${escapeHtml(user.username)}">
-                        <span>${escapeHtml(user.username)}</span>
-                    </button>
-                `;
-            });
-            
-            html += `
-                    </div>
-                </div>
-            `;
-        }
-        
-        suggestionsContainer.innerHTML = html;
-        
-    } catch (error) {
-        console.error('显示移动端搜索建议失败:', error);
-    }
-}
-
-// 选择移动端建议
-function selectMobileSuggestion(text) {
-    const searchInput = document.getElementById('mobileSearchInput');
-    if (searchInput) {
-        searchInput.value = text;
-        searchInput.focus();
-    }
-}
-
-// 选择移动端用户
-function selectMobileUser(username) {
-    const searchInput = document.getElementById('mobileSearchInput');
-    if (searchInput) {
-        searchInput.value = username;
-        searchInput.focus();
-    }
-    
-    // 直接搜索用户
-    setTimeout(() => {
-        performMobileSearch();
-    }, 100);
 }
 
 // 加载热门搜索
@@ -1407,6 +1523,9 @@ function initSearchSuggestions() {
     const searchContainer = document.querySelector('.nav-search');
     if (!searchContainer) return;
     
+    // 检查是否已存在搜索建议容器
+    if (document.getElementById('searchSuggestions')) return;
+    
     // 创建搜索建议容器
     const suggestionsContainer = document.createElement('div');
     suggestionsContainer.id = 'searchSuggestions';
@@ -1416,10 +1535,13 @@ function initSearchSuggestions() {
     
     // 点击其他地方关闭建议
     document.addEventListener('click', function(event) {
-        if (!searchContainer.contains(event.target)) {
+        const searchContainer = document.querySelector('.nav-search');
+        if (searchContainer && !searchContainer.contains(event.target)) {
             hideSearchSuggestions();
         }
     });
+    
+    console.log('✅ 桌面端搜索建议初始化完成');
 }
 
 // ============================================
@@ -1483,5 +1605,7 @@ window.selectMobileSuggestion = selectMobileSuggestion;
 window.selectMobileUser = selectMobileUser;
 window.sortSearchPhotos = sortSearchPhotos;
 window.showAllSearchPhotos = showAllSearchPhotos;
+window.updateSearchUIForMobile = updateSearchUIForMobile;
 
 console.log('🚀 应用初始化完成！');
+[file content end]
