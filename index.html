@@ -1,497 +1,126 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>照片分享</title>
-    
-    <!-- 内联CSS样式 -->
-    <style>
-        /* 基础样式 */
-        :root {
-            --primary-color: #4361ee;
-            --primary-light: #4895ef;
-            --secondary-color: #3a0ca3;
-            --success-color: #4cc9f0;
-            --danger-color: #f72585;
-            --warning-color: #f8961e;
-            --background-color: #ffffff;
-            --surface-color: #f8f9fa;
-            --text-color: #212529;
-            --text-secondary: #6c757d;
-            --border-color: #dee2e6;
-            --hover-color: #e9ecef;
-            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
-            --radius: 8px;
-            --radius-lg: 12px;
-            --radius-sm: 4px;
-        }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PhotoShare - 照片分享</title>
 
-        [data-theme="dark"] {
-            --background-color: #121212;
-            --surface-color: #1e1e1e;
-            --text-color: #ffffff;
-            --text-secondary: #b0b0b0;
-            --border-color: #333333;
-            --hover-color: #2d2d2d;
-        }
+  <!-- 样式 -->
+  <link rel="stylesheet" href="/styles.css">
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <!-- Firebase (compat 版本，方便直接在浏览器中使用，无需打包) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-analytics-compat.js"></script>
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
-            background-color: var(--background-color);
-            color: var(--text-color);
-            line-height: 1.6;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
+  <!-- Fuse.js（模糊搜索） -->
+  <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2/dist/fuse.min.js"></script>
 
-        /* 导航栏样式 */
-        .navbar {
-            background: var(--surface-color);
-            box-shadow: var(--shadow);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
+  <!-- 图标（可选）-->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 
-        .nav-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            height: 60px;
-        }
-
-        .nav-brand {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary-color);
-            text-decoration: none;
-        }
-
-        .nav-search {
-            flex: 1;
-            max-width: 500px;
-            margin: 0 2rem;
-            position: relative;
-        }
-
-        .nav-search input {
-            width: 100%;
-            padding: 0.625rem 1rem;
-            border: 2px solid var(--border-color);
-            border-radius: 50px;
-            background: var(--background-color);
-            color: var(--text-color);
-            font-size: 0.95rem;
-            transition: border-color 0.3s;
-        }
-
-        .nav-search input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-        }
-
-        .nav-search button {
-            position: absolute;
-            right: 8px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 32px;
-            height: 32px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* 移动端搜索按钮 */
-        .mobile-search-btn {
-            display: none;
-            background: none;
-            border: none;
-            color: var(--text-color);
-            font-size: 1.2rem;
-            cursor: pointer;
-            padding: 0.5rem;
-            border-radius: 50%;
-            width: 44px;
-            height: 44px;
-            align-items: center;
-            justify-content: center;
-            transition: background-color 0.3s;
-        }
-
-        @media (max-width: 768px) {
-            .mobile-search-btn {
-                display: flex !important;
-            }
-            .nav-search {
-                display: none !important;
-            }
-        }
-
-        .nav-menu {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .nav-menu a {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--text-color);
-            text-decoration: none;
-            padding: 0.5rem 0.75rem;
-            border-radius: var(--radius);
-            transition: background-color 0.3s;
-        }
-
-        .nav-menu a:hover {
-            background: var(--hover-color);
-        }
-
-        /* 主内容区 */
-        .container {
-            flex: 1;
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 0 1rem;
-            width: 100%;
-        }
-
-        .photos-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1.5rem;
-            margin-top: 1.5rem;
-        }
-
-        /* 页脚 */
-        .footer {
-            background: var(--surface-color);
-            border-top: 1px solid var(--border-color);
-            padding: 2rem 0;
-            margin-top: auto;
-        }
-
-        .footer-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 1rem;
-            text-align: center;
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        /* 添加一些基本样式 */
-        button {
-            cursor: pointer;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 2rem;
-            color: var(--text-secondary);
-        }
-
-        .error-message {
-            background: #fee;
-            color: #c33;
-            padding: 1rem;
-            border-radius: var(--radius);
-            border: 1px solid #fcc;
-            margin: 1rem 0;
-        }
-    </style>
-    
-    <!-- Font Awesome CDN -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <meta name="theme-color" content="#111827" />
 </head>
 <body>
-    <!-- 导航栏 -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-brand">
-                <i class="fas fa-camera"></i>
-                <span>光影相册</span>
-            </div>
-            
-            <!-- 桌面端搜索 -->
-            <div class="nav-search">
-                <input type="text" id="searchInput" placeholder="搜索关键词、用户名或描述...">
-                <button onclick="searchContent()"><i class="fas fa-search"></i></button>
-            </div>
-            
-            <!-- 移动端搜索按钮 -->
-            <button class="mobile-search-btn" onclick="toggleMobileSearch()">
-                <i class="fas fa-search"></i>
-            </button>
-            
-            <div class="nav-menu">
-                <a href="#" onclick="showHome()"><i class="fas fa-home"></i> <span class="nav-text">首页</span></a>
-                <a href="#" onclick="showUpload()"><i class="fas fa-cloud-upload-alt"></i> <span class="nav-text">上传</span></a>
-                <a href="#" onclick="showProfile()"><i class="fas fa-user"></i> <span class="nav-text">我的</span></a>
-                <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">
-                    <i class="fas fa-moon"></i>
-                </button>
-                <button class="btn-login" onclick="toggleAuthModal()" id="loginBtn">
-                    <i class="fas fa-sign-in-alt"></i> <span class="nav-text">登录</span>
-                </button>
-            </div>
-            
-            <button class="nav-toggle" onclick="toggleMobileMenu()">
-                <i class="fas fa-bars"></i>
-            </button>
-        </div>
-    </nav>
+  <div id="app">
+    <header class="topbar">
+      <div class="brand">PhotoShare</div>
 
-    <!-- 主内容区 -->
+      <div class="top-actions">
+        <input id="searchInput" placeholder="搜索图片、关键词、用户名..." />
+        <select id="themeSelect" title="切换主题">
+          <option value="dark">深色</option>
+          <option value="light">浅色</option>
+          <option value="white">白色</option>
+        </select>
+
+        <button id="btnNewPost" class="primary">发布</button>
+        <div id="authArea"></div>
+      </div>
+    </header>
+
     <main class="container">
-        <!-- 热门图片区 -->
-        <section id="homeSection">
-            <div class="section-header">
-                <h2><i class="fas fa-fire"></i> 热门照片</h2>
-                <div class="sort-options">
-                    <select id="sortBy" onchange="loadPhotos()">
-                        <option value="likes">按点赞数</option>
-                        <option value="recent" selected>按时间</option>
-                        <option value="views">按浏览数</option>
-                    </select>
-                </div>
-            </div>
-            <div id="photosGrid" class="photos-grid">
-                <div class="loading">加载照片中...</div>
-            </div>
+      <aside class="left-panel">
+        <section class="profile-card" id="userCard">
+          <!-- 登录后显示 -->
+          <div class="avatar" id="userAvatar"></div>
+          <div class="user-meta">
+            <div id="userName">未登录</div>
+            <div id="userBio" class="muted">请登录或注册</div>
+          </div>
+          <div class="profile-actions">
+            <button id="btnEditProfile" class="small">编辑</button>
+            <button id="btnLogout" class="small">登出</button>
+          </div>
         </section>
 
-        <!-- 搜索结果页面 -->
-        <section id="searchSection" class="hidden">
-            <div id="searchResults"></div>
+        <nav class="nav">
+          <button id="filterAll" class="active">全部</button>
+          <button id="filterFollowing">关注</button>
+          <button id="filterHot">热门</button>
+          <button id="filterMy">我的发布</button>
+          <button id="filterDiscover">讨论区</button>
+        </nav>
+
+        <section class="stats">
+          <h4>统计</h4>
+          <div>用户数: <span id="statUsers">0</span></div>
+          <div>作品数: <span id="statPosts">0</span></div>
         </section>
+      </aside>
+
+      <section class="feed" id="feed">
+        <!-- 帖子流 -->
+      </section>
+
+      <aside class="right-panel">
+        <section class="uploader" id="uploader">
+          <h4>发布新作品</h4>
+          <input id="inputFile" type="file" accept="image/*" />
+          <input id="postTitle" placeholder="标题（可选）" />
+          <input id="postKeywords" placeholder="关键词（逗号分隔，至少一个）" />
+          <select id="postPrivacy">
+            <option value="public">公开</option>
+            <option value="hidden">隐藏（仅自己可见）</option>
+          </select>
+          <textarea id="postDesc" placeholder="描述（可选）"></textarea>
+          <button id="btnUpload" class="primary">上传并发布</button>
+          <div id="uploadStatus" class="muted"></div>
+        </section>
+
+        <section class="related" id="related">
+          <h4>热门内容</h4>
+          <div id="hotList"></div>
+        </section>
+      </aside>
     </main>
 
-    <!-- 页脚 -->
-    <footer class="footer">
-        <div class="footer-content">
-            <p><i class="fas fa-camera"></i> © 2024 光影相册 - 分享每一刻精彩</p>
-            <div class="footer-links">
-                <a href="#"><i class="fas fa-info-circle"></i> 关于</a>
-                <a href="#"><i class="fas fa-file-contract"></i> 条款</a>
-                <a href="#"><i class="fas fa-shield-alt"></i> 隐私</a>
-            </div>
+    <!-- 图片模态 -->
+    <div id="lightbox" class="lightbox hidden">
+      <div class="lightbox-content">
+        <button id="lbClose" class="close">&times;</button>
+        <img id="lbImage" src="" alt="查看图片" />
+        <div class="lb-meta">
+          <div id="lbTitle"></div>
+          <div id="lbKeywords"></div>
+          <div id="lbActions"></div>
+          <div id="lbComments"></div>
         </div>
-    </footer>
-
-    <!-- 移动端搜索模态框 -->
-    <div class="mobile-search-modal">
-        <div class="mobile-search-header">
-            <button class="mobile-search-back" onclick="toggleMobileSearch()">
-                <i class="fas fa-arrow-left"></i>
-            </button>
-            <div class="mobile-search-input-container">
-                <input type="text" id="mobileSearchInput" placeholder="搜索关键词、用户名或描述...">
-                <button class="mobile-search-clear" onclick="clearMobileSearch()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <button class="mobile-search-submit" onclick="performMobileSearch()">
-                <i class="fas fa-search"></i>
-            </button>
-        </div>
-        <div class="mobile-search-suggestions" id="mobileSearchSuggestions"></div>
-        <div class="mobile-search-history" id="mobileSearchHistory"></div>
-        <div class="mobile-search-trending" id="mobileSearchTrending"></div>
+      </div>
     </div>
 
-    <!-- 内联JavaScript -->
-    <script>
-        console.log('应用启动...');
-        
-        // 移动端搜索功能
-        function toggleMobileSearch() {
-            const modal = document.querySelector('.mobile-search-modal');
-            const searchInput = document.getElementById('mobileSearchInput');
-            
-            if (modal.style.display === 'flex') {
-                modal.style.display = 'none';
-                document.body.style.overflow = 'auto';
-            } else {
-                modal.style.display = 'flex';
-                document.body.style.overflow = 'hidden';
-                if (searchInput) {
-                    searchInput.focus();
-                    updateSearchUI();
-                }
-            }
-        }
-        
-        function clearMobileSearch() {
-            const searchInput = document.getElementById('mobileSearchInput');
-            if (searchInput) searchInput.value = '';
-        }
-        
-        function performMobileSearch() {
-            const searchInput = document.getElementById('mobileSearchInput');
-            const query = searchInput ? searchInput.value.trim() : '';
-            
-            if (!query) {
-                alert('请输入搜索内容');
-                return;
-            }
-            
-            searchContent(query);
-            toggleMobileSearch();
-        }
-        
-        function searchContent(query = null) {
-            let searchQuery = query || document.getElementById('searchInput')?.value.trim();
-            
-            if (!searchQuery) {
-                alert('请输入搜索内容');
-                return;
-            }
-            
-            // 显示搜索结果
-            document.getElementById('homeSection').classList.add('hidden');
-            document.getElementById('searchSection').classList.remove('hidden');
-            
-            const resultsDiv = document.getElementById('searchResults');
-            resultsDiv.innerHTML = `
-                <div style="padding: 2rem;">
-                    <h2><i class="fas fa-search"></i> 搜索结果: "${searchQuery}"</h2>
-                    <p style="margin-top: 1rem; color: var(--text-secondary);">
-                        搜索功能需要连接Firebase后端服务才能使用完整功能。
-                    </p>
-                    <div style="margin-top: 2rem; padding: 1.5rem; background: var(--surface-color); border-radius: var(--radius);">
-                        <h3>测试搜索项：</h3>
-                        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem;">
-                            <button class="keyword" onclick="searchContent('风景')" style="padding: 0.5rem 1rem; background: var(--primary-color); color: white; border: none; border-radius: var(--radius);">风景</button>
-                            <button class="keyword" onclick="searchContent('人像')" style="padding: 0.5rem 1rem; background: var(--primary-color); color: white; border: none; border-radius: var(--radius);">人像</button>
-                            <button class="keyword" onclick="searchContent('动物')" style="padding: 0.5rem 1rem; background: var(--primary-color); color: white; border: none; border-radius: var(--radius);">动物</button>
-                            <button class="keyword" onclick="searchContent('建筑')" style="padding: 0.5rem 1rem; background: var(--primary-color); color: white; border: none; border-radius: var(--radius);">建筑</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-        
-        function showHome() {
-            document.getElementById('searchSection').classList.add('hidden');
-            document.getElementById('homeSection').classList.remove('hidden');
-        }
-        
-        function toggleTheme() {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            
-            const icon = document.querySelector('.theme-toggle i');
-            icon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-        }
-        
-        function toggleMobileMenu() {
-            const navMenu = document.querySelector('.nav-menu');
-            navMenu.style.display = navMenu.style.display === 'flex' ? 'none' : 'flex';
-        }
-        
-        function updateSearchUI() {
-            const isMobile = window.innerWidth <= 768;
-            const desktopSearch = document.querySelector('.nav-search');
-            const mobileSearchBtn = document.querySelector('.mobile-search-btn');
-            
-            if (isMobile) {
-                if (desktopSearch) desktopSearch.style.display = 'none';
-                if (mobileSearchBtn) mobileSearchBtn.style.display = 'flex';
-            } else {
-                if (desktopSearch) desktopSearch.style.display = 'flex';
-                if (mobileSearchBtn) mobileSearchBtn.style.display = 'none';
-            }
-        }
-        
-        // 页面加载完成后初始化
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM加载完成');
-            
-            // 初始化主题
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            const icon = document.querySelector('.theme-toggle i');
-            icon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-            
-            // 初始化搜索UI
-            updateSearchUI();
-            window.addEventListener('resize', updateSearchUI);
-            
-            // 为移动端搜索输入框添加回车事件
-            const mobileInput = document.getElementById('mobileSearchInput');
-            if (mobileInput) {
-                mobileInput.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
-                        performMobileSearch();
-                    }
-                });
-            }
-            
-            // 模拟加载照片
-            setTimeout(() => {
-                const photosGrid = document.getElementById('photosGrid');
-                if (photosGrid) {
-                    photosGrid.innerHTML = `
-                        <div style="text-align: center; grid-column: 1/-1; padding: 3rem;">
-                            <i class="fas fa-camera" style="font-size: 3rem; color: var(--text-secondary); margin-bottom: 1rem;"></i>
-                            <h3>欢迎使用光影相册</h3>
-                            <p style="color: var(--text-secondary); margin-top: 0.5rem;">
-                                连接Firebase后可以查看和上传照片
-                            </p>
-                            <button onclick="toggleAuthModal()" style="margin-top: 1rem; padding: 0.75rem 2rem; background: var(--primary-color); color: white; border: none; border-radius: var(--radius);">
-                                登录/注册开始使用
-                            </button>
-                        </div>
-                    `;
-                }
-            }, 1000);
-        });
-        
-        // 模态框相关函数（占位）
-        function toggleAuthModal() {
-            alert('登录/注册功能需要连接Firebase');
-        }
-        
-        function showUpload() {
-            alert('上传功能需要连接Firebase');
-        }
-        
-        function showProfile() {
-            alert('个人资料功能需要连接Firebase');
-        }
-        
-        function loadPhotos() {
-            console.log('加载照片');
-        }
-        
-        console.log('✅ 应用初始化完成');
-    </script>
+    <!-- 登录/注册/编辑 模态 -->
+    <div id="modal" class="modal hidden">
+      <div class="modal-window">
+        <button id="modalClose" class="close">&times;</button>
+        <div id="modalContent"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase config & App logic -->
+  <script src="/js/firebase-config.js"></script>
+  <script src="/js/app.js"></script>
 </body>
 </html>
